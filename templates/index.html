@@ -8,14 +8,10 @@
           765PRO AS組の13人を識別出来たらいいなーって
         </p>
         {% if result %}
-          <h2 style="margin-left:10px;">「この顔は<span class="red">{{result[0][0]['name']}}</span>の確率<span class="red">{{result[0][0]['rate']}}</span>%です。」</h2>
           <div class="col-md-7">
             <img src={{result[1]}} class="detect_img">
           </div>
           <div class="col-md-5">
-            <p class="logo_container">
-              <img src='./static/images/facebook.jpg' class="logo">
-            </p>
             <p><img src={{result[2]}} class="cut_image"></p>
             <p class="detail_container">
               <解析詳細><br>
@@ -31,7 +27,7 @@
           </div>
         {% endif %}
         <div class="col-md-12" style="margin-top:10px; margin-bottom:20px;">
-          <form action="/post" method="post" class="form-inline" enctype = "multipart/form-data">
+          <form action="/post" method="post" class="form-inline" enctype="multipart/form-data">
             <input type = "file" name = "file" />
             <button type="submit" class="btn btn-primary" style="margin-top:5px;">検出開始！</button>
           </form>

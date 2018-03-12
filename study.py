@@ -19,7 +19,7 @@ FLAGS = flags.FLAGS
 # 学習用データ
 flags.DEFINE_string('train', './data/train/data2.txt', 'File name of train data')
 # 検証用テストデータ
-flags.DEFINE_string('test', './data/test/data2.txt', 'File name of train data')
+flags.DEFINE_string('test', './data/test/data2.txt', 'File name of test data')
 # データを置いてあるフォルダ
 flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.')
 # データ学習訓練の試行回数
