@@ -17,9 +17,9 @@ IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 # 学習用データ
-flags.DEFINE_string('train', './data/train/data2.txt', 'File name of train data')
+flags.DEFINE_string('train', './data/train/list.json', 'File name of train data')
 # 検証用テストデータ
-flags.DEFINE_string('test', './data/test/data2.txt', 'File name of test data')
+flags.DEFINE_string('test', './data/test/list.json', 'File name of test data')
 # データを置いてあるフォルダ
 flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.')
 # データ学習訓練の試行回数
@@ -159,7 +159,6 @@ if __name__ == '__main__':
         l = line.split()
         # データを読み込んで28x28に縮小
         img = cv2.imread(l[0])
-        img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
         # 一列にした後、0-1のfloat値にする
         train_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
@@ -178,7 +177,6 @@ if __name__ == '__main__':
         line = line.rstrip()
         l = line.split()
         img = cv2.imread(l[0])
-        img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
         test_image.append(img.flatten().astype(np.float32)/255.0)
         tmp = np.zeros(NUM_CLASSES)
         tmp[int(l[1])] = 1

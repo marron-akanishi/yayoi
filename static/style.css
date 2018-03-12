@@ -13,17 +13,36 @@
   height: 150px;
 }
 
-.logo {
-  width:150px;
-  height:35px;
-}
-
-.logo_container {
-  margin-top:50px;
-}
-
 .detail_container {
   background-color:#dcdcdc;
   padding:5px; width:200px;
   border:1px solid #a9a9a9;
+}
+
+.balloon1-left {
+ 	position: relative;
+	display: inline-block;
+ 	margin: 1.5em 0 1.5em 10px;
+	padding: 7px 10px;
+	min-width: 120px;
+ 	max-width: 100%;
+ 	color: #555;
+	font-size: 20px;
+  background: #e0edff;
+  border-radius: 15px;
+}
+
+.balloon1-left:before{
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: -27px;
+ 	margin-top: -15px;
+	border: 15px solid transparent;
+	border-right: 15px solid #e0edff;
+}
+
+.balloon1-left p {
+	margin: 0;
+	padding: 0;
 }

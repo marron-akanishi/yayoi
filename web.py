@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug import secure_filename
-import pic_eval
+#import pic_eval
 
 # 自身の名称を app という名前でインスタンス化する
 app = Flask(__name__)
@@ -15,7 +15,7 @@ def index():
   return render_template('index.html')
 
 # 画像投稿時のアクション
-@app.route('/post', methods=['GET','POST'])
+@app.route('/detect', methods=['GET','POST'])
 def post():
   if request.method == 'POST':
     if not request.files['file'].filename == '':
@@ -24,7 +24,7 @@ def post():
       img_path = os.path.join(UPLOAD_FOLDER, secure_filename(f.filename))
       f.save(img_path)
       # pic_eval.pyへアップロードされた画像を渡す
-      result = pic_eval.evaluation(img_path, './imas_model.ckpt')
+      #result = pic_eval.evaluation(img_path, './imas_model.ckpt')
     else:
       result = []
     return render_template('index.html', result=result)

@@ -13,11 +13,13 @@ face_detector = dlib.simple_object_detector("./detector_face.svm")
 # 識別ラベルと各ラベル番号に対応する名前
 CHARA_NAMES = json.load(open("./chara.json"))
 # 顔サイズ
-MIN_SIZE = 64
+FACE_SIZE = 64
+# エリア拡大
+ZOOM = 5
 
 # キャラ判定本体
 def chara_detect(img, ckpt_path):
-    img = cv2.resize(img, (MIN_SIZE, MIN_SIZE))
+    img = cv2.resize(img, (FACE_SIZE, FACE_SIZE))
     # データを入れる配列
     image = []
     # 画像情報を一列にした後、0-1のfloat値にする
@@ -73,25 +75,25 @@ def evaluation(img_path, ckpt_path):
             if abs(face_width - face_height) > 3:
                 continue
             # 幅拡大
-            xs = int(rect.left() - face_width/5)
+            xs = int(rect.left() - face_width/ZOOM)
             if(xs < 0):
                 xs = 0
-            xe = int(rect.right() + face_width/5)
+            xe = int(rect.right() + face_width/ZOOM)
             if(xe > width):
                 xe = width
             # 高さ拡大
-            ys = int(rect.top() - face_height/5)
+            ys = int(rect.top() - face_height/ZOOM)
             if(ys < 0):
                 ys = 0
-            ye = int(rect.bottom() + face_height/5)
+            ye = int(rect.bottom() + face_height/ZOOM)
             if(ye > height):
                 ye = height
             # サイズ更新
             face_width = xe - xs
             face_height = ye - ys
-            # 横幅がMIN_SIZE以下は弾く
-            if face_width >= MIN_SIZE:
-                # 顔部分を赤線で書こう
+            # 横幅がFACE_SIZE以下は弾く
+            if face_width >= FACE_SIZE:
+                # 顔部分を赤線で囲う
                 cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
                 # 顔だけ切り出し
                 dst = image[ys:ye, xs:xe]
@@ -116,4 +118,4 @@ def evaluation(img_path, ckpt_path):
 
 # コマンドラインからのテスト用
 if __name__ == '__main__':
-    evaluation(sys.argv[1], './imas_model.ckpt')
+    print(evaluation(sys.argv[1], './imas_model.ckpt'))
