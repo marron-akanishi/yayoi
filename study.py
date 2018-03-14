@@ -77,8 +77,8 @@ def inference(images_placeholder, keep_prob):
 
     # 畳み込み層第2レイヤーの作成
     with tf.name_scope('conv2') as scope:
-        # 第一レイヤーでの出力を第2レイヤー入力にしてもう一度フィルタリング実施。
-        # 64個の特徴を検出する。inputが32なのはなんで?(教えて欲しい)
+        # 第1レイヤーでの出力を第2レイヤー入力にしてもう一度フィルタリング実施。
+        # 64個の特徴を検出する。inputが32なのはおそらく第1レイヤーの出力と一致させてる。
         W_conv2 = weight_variable([5, 5, 32, 64])
         # バイアスの数値を代入(第一レイヤーと同じ)
         b_conv2 = bias_variable([64])

@@ -63,6 +63,8 @@ def evaluation(img_path, ckpt_path):
     image = cv2.imread(img_path)
     try:
         height, width, channels = image.shape
+        if height > 2000 or width > 2000:
+            return None
         faces = face_detector(image)
     except:
         return None

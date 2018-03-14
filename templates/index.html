@@ -1,42 +1,56 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="form">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <div>
-          <img src="/static/images/yayoi_sd.png"/>
-          <p class="balloon1-left">
-            {% if result %}
-            うっうー！この画像には多分AS組の仲間が写ってると思います
-            うーん、多分この画像にAS組の人はいないかな～
-            {% else %}
-            765PRO AS組の13人を識別出来たらいいなーって
-            {% endif %}
-          </p>
-        </div> 
+<div class="container">
+  <!-- 上 -->
+  <div class="row">
+    <!-- キャラ -->
+    <div class="col-md-8">
+      <img src="/static/images/yayoi_sd.png"/>
+      <p class="balloon1-left">
         {% if result %}
-          <div class="col-md-7">
-            <img src={{result[1]}} class="detect_img">
-          </div>
-          <div class="col-md-5">
-            <p><img src={{result[2]}} class="cut_image"></p>
-            <p class="detail_container">
-              <解析詳細><br>
-              {{result[0][0]['name']}}：{{result[0][0]['rate']}}%<br>
-              {{result[0][1]['name']}}：{{result[0][1]['rate']}}%<br>
-              {{result[0][2]['name']}}：{{result[0][2]['rate']}}%<br>
-            </p>
-          </div>
+          {% if isAS %}
+          うっうー！この画像にはAS組の仲間が写ってると思います！
+          {% else %}
+          うう…。この画像にAS組の人はいないみたいです。
+          {% endif %}
+        {% elif error %}
+        うーん？この画像はどこかがおかしいみたいです。
+        {% else %}
+        765PRO AS組の13人を識別出来たらいいなーって。
         {% endif %}
-        <div class="col-md-12" style="margin-top:10px; margin-bottom:20px;">
-          <form action="/detect" method="post" class="form-inline" enctype="multipart/form-data">
-            <input type = "file" name = "file" />
-            <button type="submit" class="btn btn-primary" style="margin-top:5px;">画像を渡す</button>
-          </form>
-        </div>
-      </div>
+      </p>
+    </div>
+    <!-- 送信フォーム -->
+    <div class="col-md-4">
+      <p>画像サイズ制限：2000x2000px以下</p>
+      <form action="/detect" method="post" class="form-inline" enctype="multipart/form-data">
+        <input type="file" name="file" class=”form-control” required/>
+        <button type="submit" class="btn btn-primary" style="margin-top:10px;">画像を渡す</button>
+      </form>
     </div>
   </div>
+  <!-- 下 -->
+  {% if result %}
+  <div>
+    <img src="{{img_path}}" class="detect_img" />
+  </div>
+  <div class="col-md-12">
+    {% for chara in result %}
+    <div class="detail">
+      <p>これは<span class="red">{{chara['rank'][0]['name']}}</span>ですね</p>
+      <p>
+        <canvas id="canvas-{{loop.index0}}" class="cut_image">
+      </p>
+      <p class="detail_container">
+        <判定詳細>
+        {% for _ in range(3) %}
+        <br> {{chara['rank'][loop.index0]['name']}}：{{chara['rank'][loop.index0]['rate']}}%
+        {% endfor %}
+        <br>
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
