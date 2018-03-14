@@ -29,8 +29,8 @@
       </form>
     </div>
   </div>
-  <!-- 下 -->
   {% if result %}
+  <!-- 下 -->
   <div>
     <img src="{{img_path}}" class="detect_img" />
   </div>
@@ -39,7 +39,7 @@
     <div class="detail">
       <p>これは<span class="red">{{chara['rank'][0]['name']}}</span>ですね</p>
       <p>
-        <canvas id="canvas-{{loop.index0}}" class="cut_image">
+        <canvas id="canvas-{{loop.index0}}" class="cut_image"></canvas>
       </p>
       <p class="detail_container">
         <判定詳細>
@@ -49,6 +49,14 @@
         <br>
       </p>
     </div>
+    <script type="text/javascript">
+      var facex = '{{rect[0]}}';
+      var facey = '{{rect[1]}}';
+      var facew = '{{rect[2]}}';
+      var faceh = '{{rect[3]}}';
+      var image_url = '{{img_path}}';
+    </script>
+    <script src="/static/image.js"></script>
     {% endfor %}
   </div>
   {% endif %}

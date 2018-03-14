@@ -1,7 +1,7 @@
 import os
 import uuid
 from flask import Flask, render_template, request
-#import pic_eval
+import pic_eval
 
 # 自身の名称を app という名前でインスタンス化する
 app = Flask(__name__)
@@ -26,16 +26,20 @@ def post():
             img_path = UPLOAD_FOLDER + filename
             f.save(img_path)
             # pic_eval.pyへアップロードされた画像を渡す
-            #result = pic_eval.evaluation(img_path, './imas_model.ckpt')
+            result = pic_eval.evaluation(img_path, './imas_model.ckpt')
     if result is None:
         return render_template('index.html', error=True)
     else:
         isAS = False
+        rect = [[],[],[],[]]
         for chara in result:
+            rect[0].append(chara['x'])
+            rect[1].append(chara['y'])
+            rect[2].append(chara['width'])
+            rect[3].append(chara['height'])
             if chara['rank'][0]['label'] != 13:
                 isAS = True
-                break
-        return render_template('index.html', img_path=img_path[1:], result=result, isAS=isAS)
+        return render_template('index.html', img_path=img_path[1:], rect=rect, result=result, isAS=isAS)
 
 if __name__ == '__main__':
     app.debug = True
