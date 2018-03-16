@@ -1,7 +1,6 @@
 *.jpg
 *.png
 *.db
-!yayoi_sd.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -96,8 +96,6 @@ def evaluation(img_path, ckpt_path):
             face_height = ye - ys
             # 横幅がFACE_SIZE以下は弾く
             if face_width >= FACE_SIZE:
-                # 顔部分を赤線で囲う
-                cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
                 # 顔だけ切り出し
                 dst = image[ys:ye, xs:xe]
                 # キャラ判定
@@ -110,6 +108,11 @@ def evaluation(img_path, ckpt_path):
                 chara["height"] = face_height
                 chara["rank"] = sorted(result, key=lambda x: x['rate'], reverse=True)
                 charas.append(chara)
+                # 顔部分を囲う
+                if chara["rank"][0]["label"] == 13:
+                    cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
+                else:
+                    cv2.rectangle(image, (xs, ys), (xe, ye), (255, 0, 0), thickness=2)
     else:
         # 顔が見つからなければ処理終了
         return None
