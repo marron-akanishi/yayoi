@@ -109,7 +109,7 @@ def evaluation(img_path, ckpt_path):
                 chara["rank"] = sorted(result, key=lambda x: x['rate'], reverse=True)
                 charas.append(chara)
                 # 顔部分を囲う
-                if chara["rank"][0]["label"] == 13:
+                if chara["rank"][0]["label"] == (len(CHARA_NAMES)-1):
                     cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
                 else:
                     cv2.rectangle(image, (xs, ys), (xe, ye), (255, 0, 0), thickness=2)

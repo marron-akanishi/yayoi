@@ -3,6 +3,7 @@ import uuid
 from flask import Flask, render_template, request
 import pic_eval
 
+OTHER = 13
 # 自身の名称を app という名前でインスタンス化する
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -37,7 +38,7 @@ def post():
             rect[1].append(chara['y'])
             rect[2].append(chara['width'])
             rect[3].append(chara['height'])
-            if chara['rank'][0]['label'] != 13:
+            if chara['rank'][0]['label'] != OTHER:
                 isAS = True
         return render_template('index.html', img_path=img_path[1:], rect=rect, result=result, isAS=isAS)
 

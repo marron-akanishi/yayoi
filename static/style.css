@@ -1,5 +1,5 @@
 .red {
-  color: red;
+  color: green;
 }
 
 .detect_img {
@@ -42,7 +42,7 @@
 	content: "";
 	position: absolute;
 	top: 50%;
-	left: -27px;
+	left: -25px;
  	margin-top: -15px;
 	border: 15px solid transparent;
 	border-right: 15px solid #e0edff;
