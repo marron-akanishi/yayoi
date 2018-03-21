@@ -14,7 +14,7 @@ face_detector = dlib.simple_object_detector("./detector_face.svm")
 # 識別ラベルと各ラベル番号に対応する名前
 CHARA_NAMES = json.load(open("./chara.json"))
 # 顔サイズ
-FACE_SIZE = 64
+FACE_SIZE = 32
 # エリア拡大
 ZOOM = 5
 

@@ -1,4 +1,5 @@
 import sys
+import json
 import cv2
 import random
 import numpy as np
@@ -8,7 +9,7 @@ import tensorflow.python.platform
 # 識別ラベルの数(13人＋負データ)
 NUM_CLASSES = 14
 # 学習する時の画像のサイズ(px)
-IMAGE_SIZE = 64
+IMAGE_SIZE = 32
 # 画像の次元数
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
@@ -17,13 +18,13 @@ IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 # 学習用データ
-flags.DEFINE_string('train', './data/train/list.json', 'File name of train data')
+flags.DEFINE_string('train', './files/study.json', 'File name of train data')
 # 検証用テストデータ
-flags.DEFINE_string('test', './data/test/list.json', 'File name of test data')
+flags.DEFINE_string('test', './files/test.json', 'File name of test data')
 # データを置いてあるフォルダ
-flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.')
+flags.DEFINE_string('train_dir', './files', 'Directory to put the training data.')
 # データ学習訓練の試行回数
-flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 1000, 'Number of steps to run trainer.')
 # 1回の学習で何枚の画像を使うか
 flags.DEFINE_integer('batch_size', 20, 'Batch size Must divide evenly into the dataset sizes.')
 # 学習率、小さすぎると学習が進まないし、大きすぎても誤差が収束しなかったり発散したりしてダメとか
@@ -89,14 +90,28 @@ def inference(images_placeholder, keep_prob):
     with tf.name_scope('pool2') as scope:
         h_pool2 = max_pool_2x2(h_conv2)
 
+    # 畳み込み層第3レイヤーの作成
+    with tf.name_scope('conv3') as scope:
+        # 第2レイヤーでの出力を第3レイヤー入力にしてもう一度フィルタリング実施。
+        # 128個の特徴を検出する。
+        W_conv3 = weight_variable([5, 5, 64, 128])
+        # バイアスの数値を代入(第一レイヤーと同じ)
+        b_conv3 = bias_variable([128])
+        # 検出した特徴の整理(第一レイヤーと同じ)
+        h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
+
+    # プーリング層3の作成(ブーリング層1と同じ)
+    with tf.name_scope('pool3') as scope:
+        h_pool3 = max_pool_2x2(h_conv3)
+
     # 全結合層1の作成
     with tf.name_scope('fc1') as scope:
-        W_fc1 = weight_variable([7*7*64, 1024])
-        b_fc1 = bias_variable([1024])
+        W_fc1 = weight_variable([16*16*160, 512])
+        b_fc1 = bias_variable([512])
         # 画像の解析を結果をベクトルへ変換
-        h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+        h_pool3_flat = tf.reshape(h_pool3, [-1, 16*16*160])
         # 第一、第二と同じく、検出した特徴を活性化させている
-        h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
         # dropoutの設定
         # 訓練用データだけに最適化して、実際にあまり使えないような
         # AIになってしまう「過学習」を防止の役割を果たすらしい
@@ -104,7 +119,7 @@ def inference(images_placeholder, keep_prob):
 
     # 全結合層2の作成(読み出しレイヤー)
     with tf.name_scope('fc2') as scope:
-        W_fc2 = weight_variable([1024, NUM_CLASSES])
+        W_fc2 = weight_variable([512, NUM_CLASSES])
         b_fc2 = bias_variable([NUM_CLASSES])
 
     # ソフトマックス関数による正規化
@@ -122,7 +137,7 @@ def loss(logits, labels):
     # 交差エントロピーの計算
     cross_entropy = -tf.reduce_sum(labels*tf.log(logits))
     # TensorBoardで表示するよう指定
-    tf.scalar_summary("cross_entropy", cross_entropy)
+    tf.summary.scalar("cross_entropy", cross_entropy)
     # 誤差の率の値(cross_entropy)を返す
     return cross_entropy
 
@@ -144,46 +159,45 @@ def accuracy(logits, labels):
     # false:0,true:1に変換して計算する
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     # TensorBoardで表示する様設定
-    tf.scalar_summary("accuracy", accuracy)
+    tf.summary.scalar("accuracy", accuracy)
     return accuracy
 
 if __name__ == '__main__':
     # ファイルを開く
-    f = open(FLAGS.train, 'r')
+    filelist = json.load(open(FLAGS.train, 'r'))
     # データを入れる配列
     train_image = []
     train_label = []
-    for line in f:
-        # 改行を除いてスペース区切りにする
-        line = line.rstrip()
-        l = line.split()
-        # データを読み込んで28x28に縮小
-        img = cv2.imread(l[0])
+    for filepath in filelist.keys():
+        # データを読み込む
+        img = cv2.imread(filepath)
         # 一列にした後、0-1のfloat値にする
         train_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
         tmp = np.zeros(NUM_CLASSES)
-        tmp[int(l[1])] = 1
+        tmp[filelist[filepath]] = 1
         train_label.append(tmp)
     # numpy形式に変換
     train_image = np.asarray(train_image)
     train_label = np.asarray(train_label)
-    f.close()
 
-    f = open(FLAGS.test, 'r')
+    # ファイルを開く
+    filelist = json.load(open(FLAGS.test, 'r'))
+    # データを入れる配列
     test_image = []
     test_label = []
-    for line in f:
-        line = line.rstrip()
-        l = line.split()
-        img = cv2.imread(l[0])
+    for filepath in filelist.keys():
+        # データを読み込む
+        img = cv2.imread(filepath)
+        # 一列にした後、0-1のfloat値にする
         test_image.append(img.flatten().astype(np.float32)/255.0)
+        # ラベルを1-of-k方式で用意する
         tmp = np.zeros(NUM_CLASSES)
-        tmp[int(l[1])] = 1
+        tmp[filelist[filepath]] = 1
         test_label.append(tmp)
+    # numpy形式に変換
     test_image = np.asarray(test_image)
     test_label = np.asarray(test_label)
-    f.close()
 
     #TensorBoardのグラフに出力するスコープを指定
     with tf.Graph().as_default():
@@ -210,13 +224,13 @@ if __name__ == '__main__':
         # 変数の初期化(Sessionを開始したらまず初期化)
         sess.run(tf.initialize_all_variables())
         # TensorBoard表示の設定(TensorBoardの宣言的な?)
-        summary_op = tf.merge_all_summaries()
+        summary_op = tf.summary.merge_all()
         # train_dirでTensorBoardログを出力するpathを指定
-        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph_def)
+        summary_writer = tf.summary.FileWriter(FLAGS.train_dir, sess.graph_def)
 
         # 実際にmax_stepの回数だけ訓練の実行していく
         for step in range(FLAGS.max_steps):
-            for i in range(len(train_image)/FLAGS.batch_size):
+            for i in range(len(train_image)//FLAGS.batch_size):
                 # batch_size分の画像に対して訓練の実行
                 batch = FLAGS.batch_size*i
                 # feed_dictでplaceholderに入れるデータを指定する
@@ -230,7 +244,7 @@ if __name__ == '__main__':
                 images_placeholder: train_image,
                 labels_placeholder: train_label,
                 keep_prob: 1.0})
-            print("step {}, training accuracy {}".format(step, train_accuracy)
+            print("step {}, training accuracy {}".format(step, train_accuracy))
 
             # 1step終わるたびにTensorBoardに表示する値を追加する
             summary_str = sess.run(summary_op, feed_dict={
