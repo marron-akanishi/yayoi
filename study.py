@@ -4,7 +4,6 @@ import cv2
 import random
 import numpy as np
 import tensorflow as tf
-import tensorflow.python.platform
 
 # 識別ラベルの数
 NUM_CLASSES = 13
@@ -23,7 +22,7 @@ train_dir = './files'
 # 1回の学習で何枚の画像を使うか
 batch_size = 400
 # 学習率、小さすぎると学習が進まないし、大きすぎても誤差が収束しなかったり発散したりしてダメとか
-learning_rate = 1e-5
+learning_rate = 1e-4
 
 # AIの学習モデル部分(ニューラルネットワーク)を作成する
 # images_placeholder: 画像のplaceholder, keep_prob: dropout率のplace_holderが引数になり
@@ -164,7 +163,8 @@ if __name__ == '__main__':
         # 一列にした後、0-1のfloat値にする
         train_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
-        tmp = np.zeros(NUM_CLASSES)
+        # こういうのをone-hotベクトルって言うのかい？
+        tmp = [0 for i in range(NUM_CLASSES)]
         tmp[filelist[filepath]] = 1
         train_label.append(tmp)
     # numpy形式に変換
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         # 一列にした後、0-1のfloat値にする
         test_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
-        tmp = np.zeros(NUM_CLASSES)
+        tmp = [0 for i in range(NUM_CLASSES)]
         tmp[filelist[filepath]] = 1
         test_label.append(tmp)
     # numpy形式に変換
@@ -222,7 +222,8 @@ if __name__ == '__main__':
         step = 0
         print(len(train_image))
         # 無限に訓練を実行していく
-        for step in range(400):
+        #while True:
+        for step in range(150):
             for i in range(len(train_image)//batch_size):
                 # batch_size分の画像に対して訓練の実行
                 batch = batch_size*i

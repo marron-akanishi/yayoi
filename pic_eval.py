@@ -29,39 +29,37 @@ def chara_detect(img, ckpt_path):
     image.append(img.flatten().astype(np.float32)/255.0)
     # numpy形式に変換し、TensorFlowで処理できるようにする
     image = np.asarray(image)
+    # GraphのReset(らしいが、何をしているのかよくわかっていない…)
+    tf.reset_default_graph()
     # 入力画像に対して、各ラベルの確率を出力して返す(study.pyより呼び出し)
     logits = study.inference(image, 1.0)
-    # We can just use 'c.eval()' without passing 'sess'
-    sess = tf.InteractiveSession()
-    # 変数の初期化
-    sess.run(tf.global_variables_initializer())
-    if ckpt_path:
-        saver = tf.train.import_meta_graph(ckpt_path+".meta")
+    # ロード用saver作成
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        # 変数の初期化
+        sess.run(tf.global_variables_initializer())
         # 学習後のパラメーターの読み込み
         saver.restore(sess, ckpt_path)
-    # sess.run(logits)と同じ
-    softmax = logits.eval()
-    # 判定結果
-    result = softmax[0]
-    # 判定結果を%にして四捨五入
-    rates = [round(n * 100.0, 1) for n in result]
-    results = []
-    # ラベル番号、名前、パーセンテージの辞書を作成
-    for index, rate in enumerate(rates):
-        name = CHARA_NAMES[str(index)]
-        results.append({
-            'label': index,
-            'name': name,
-            'rate': rate
-        })
-    sess.close()
+        # 評価実行
+        softmax = sess.run(logits)
+        # 判定結果
+        result = softmax[0]
+        # 判定結果を%にして四捨五入
+        rates = [round(n * 100.0, 1) for n in result]
+        results = []
+        # ラベル番号、名前、パーセンテージの辞書を作成
+        for index, rate in enumerate(rates):
+            name = CHARA_NAMES[str(index)]
+            results.append({
+                'label': index,
+                'name': name,
+                'rate': rate
+            })
     return results
 
 # 指定した画像(img_path)を学習結果(ckpt_path)を用いて判定する
 def evaluation(img_path, ckpt_path):
     charas = []
-    # GraphのReset(らしいが、何をしているのかよくわかっていない…)
-    tf.reset_default_graph()
     # ファイルを開く
     image = cv2.imread(img_path)
     try:
