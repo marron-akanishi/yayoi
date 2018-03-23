@@ -6,29 +6,24 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.python.platform
 
-# 識別ラベルの数(13人＋負データ)
-NUM_CLASSES = 14
+# 識別ラベルの数
+NUM_CLASSES = 13
 # 学習する時の画像のサイズ(px)
-IMAGE_SIZE = 32
+IMAGE_SIZE = 28
 # 画像の次元数
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
 # 学習に必要なデータのpathや学習の規模を設定
-# パラメタの設定、デフォルト値やヘルプ画面の説明文を登録できるTensorFlow組み込み関数
-flags = tf.app.flags
-FLAGS = flags.FLAGS
 # 学習用データ
-flags.DEFINE_string('train', './files/study.json', 'File name of train data')
+train_data = "./files/study.json"
 # 検証用テストデータ
-flags.DEFINE_string('test', './files/test.json', 'File name of test data')
+test_data = './files/test.json'
 # データを置いてあるフォルダ
-flags.DEFINE_string('train_dir', './files', 'Directory to put the training data.')
-# データ学習訓練の試行回数
-flags.DEFINE_integer('max_steps', 1000, 'Number of steps to run trainer.')
+train_dir = './files'
 # 1回の学習で何枚の画像を使うか
-flags.DEFINE_integer('batch_size', 20, 'Batch size Must divide evenly into the dataset sizes.')
+batch_size = 400
 # 学習率、小さすぎると学習が進まないし、大きすぎても誤差が収束しなかったり発散したりしてダメとか
-flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
+learning_rate = 1e-5
 
 # AIの学習モデル部分(ニューラルネットワーク)を作成する
 # images_placeholder: 画像のplaceholder, keep_prob: dropout率のplace_holderが引数になり
@@ -79,7 +74,7 @@ def inference(images_placeholder, keep_prob):
     # 畳み込み層第2レイヤーの作成
     with tf.name_scope('conv2') as scope:
         # 第1レイヤーでの出力を第2レイヤー入力にしてもう一度フィルタリング実施。
-        # 64個の特徴を検出する。inputが32なのはおそらく第1レイヤーの出力と一致させてる。
+        # 64個の特徴を検出する。inputが32なのは第1レイヤーの出力と一致させてる。
         W_conv2 = weight_variable([5, 5, 32, 64])
         # バイアスの数値を代入(第一レイヤーと同じ)
         b_conv2 = bias_variable([64])
@@ -90,28 +85,14 @@ def inference(images_placeholder, keep_prob):
     with tf.name_scope('pool2') as scope:
         h_pool2 = max_pool_2x2(h_conv2)
 
-    # 畳み込み層第3レイヤーの作成
-    with tf.name_scope('conv3') as scope:
-        # 第2レイヤーでの出力を第3レイヤー入力にしてもう一度フィルタリング実施。
-        # 128個の特徴を検出する。
-        W_conv3 = weight_variable([5, 5, 64, 128])
-        # バイアスの数値を代入(第一レイヤーと同じ)
-        b_conv3 = bias_variable([128])
-        # 検出した特徴の整理(第一レイヤーと同じ)
-        h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
-
-    # プーリング層3の作成(ブーリング層1と同じ)
-    with tf.name_scope('pool3') as scope:
-        h_pool3 = max_pool_2x2(h_conv3)
-
     # 全結合層1の作成
     with tf.name_scope('fc1') as scope:
-        W_fc1 = weight_variable([16*16*160, 512])
-        b_fc1 = bias_variable([512])
+        W_fc1 = weight_variable([7*7*64, 1024])
+        b_fc1 = bias_variable([1024])
         # 画像の解析を結果をベクトルへ変換
-        h_pool3_flat = tf.reshape(h_pool3, [-1, 16*16*160])
+        h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
         # 第一、第二と同じく、検出した特徴を活性化させている
-        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
         # dropoutの設定
         # 訓練用データだけに最適化して、実際にあまり使えないような
         # AIになってしまう「過学習」を防止の役割を果たすらしい
@@ -119,7 +100,7 @@ def inference(images_placeholder, keep_prob):
 
     # 全結合層2の作成(読み出しレイヤー)
     with tf.name_scope('fc2') as scope:
-        W_fc2 = weight_variable([512, NUM_CLASSES])
+        W_fc2 = weight_variable([1024, NUM_CLASSES])
         b_fc2 = bias_variable([NUM_CLASSES])
 
     # ソフトマックス関数による正規化
@@ -135,7 +116,8 @@ def inference(images_placeholder, keep_prob):
 # labelsは正解ラベル: int32 - [batch_size, NUM_CLASSES]
 def loss(logits, labels):
     # 交差エントロピーの計算
-    cross_entropy = -tf.reduce_sum(labels*tf.log(logits))
+    # 普通に計算するとlog0になる可能性があるため正規化している
+    cross_entropy = -tf.reduce_sum(labels*tf.log(logits+1e-8))
     # TensorBoardで表示するよう指定
     tf.summary.scalar("cross_entropy", cross_entropy)
     # 誤差の率の値(cross_entropy)を返す
@@ -162,15 +144,23 @@ def accuracy(logits, labels):
     tf.summary.scalar("accuracy", accuracy)
     return accuracy
 
+def shuffleDict(d):
+    keys = list(d.keys())
+    random.shuffle(keys)
+    keys = [(key, d[key]) for key in keys]
+    return dict(keys)
+  
 if __name__ == '__main__':
     # ファイルを開く
-    filelist = json.load(open(FLAGS.train, 'r'))
+    filelist = json.load(open(train_data, 'r'))
+    filelist = shuffleDict(filelist)
     # データを入れる配列
     train_image = []
     train_label = []
     for filepath in filelist.keys():
         # データを読み込む
         img = cv2.imread(filepath)
+        img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
         # 一列にした後、0-1のfloat値にする
         train_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
@@ -182,13 +172,14 @@ if __name__ == '__main__':
     train_label = np.asarray(train_label)
 
     # ファイルを開く
-    filelist = json.load(open(FLAGS.test, 'r'))
+    filelist = json.load(open(test_data, 'r'))
     # データを入れる配列
     test_image = []
     test_label = []
     for filepath in filelist.keys():
         # データを読み込む
         img = cv2.imread(filepath)
+        img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
         # 一列にした後、0-1のfloat値にする
         test_image.append(img.flatten().astype(np.float32)/255.0)
         # ラベルを1-of-k方式で用意する
@@ -203,7 +194,7 @@ if __name__ == '__main__':
     with tf.Graph().as_default():
         # 画像を入れるためのTensor(28*28*3(IMAGE_PIXELS)次元の画像が任意の枚数(None)分はいる)
         images_placeholder = tf.placeholder("float", shape=(None, IMAGE_PIXELS))
-        # ラベルを入れるためのTensor(3(NUM_CLASSES)次元のラベルが任意の枚数(None)分入る)
+        # ラベルを入れるためのTensor(13(NUM_CLASSES)次元のラベルが任意の枚数(None)分入る)
         labels_placeholder = tf.placeholder("float", shape=(None, NUM_CLASSES))
         # dropout率を入れる仮のTensor
         keep_prob = tf.placeholder("float")
@@ -213,7 +204,7 @@ if __name__ == '__main__':
         # loss()を呼び出して損失を計算
         loss_value = loss(logits, labels_placeholder)
         # training()を呼び出して訓練して学習モデルのパラメーターを調整する
-        train_op = training(loss_value, FLAGS.learning_rate)
+        train_op = training(loss_value, learning_rate)
         # 精度の計算
         acc = accuracy(logits, labels_placeholder)
 
@@ -222,21 +213,23 @@ if __name__ == '__main__':
         # Sessionの作成(TensorFlowの計算は絶対Sessionの中でやらなきゃだめ)
         sess = tf.Session()
         # 変数の初期化(Sessionを開始したらまず初期化)
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         # TensorBoard表示の設定(TensorBoardの宣言的な?)
         summary_op = tf.summary.merge_all()
         # train_dirでTensorBoardログを出力するpathを指定
-        summary_writer = tf.summary.FileWriter(FLAGS.train_dir, sess.graph_def)
+        summary_writer = tf.summary.FileWriter(train_dir, sess.graph)
 
-        # 実際にmax_stepの回数だけ訓練の実行していく
-        for step in range(FLAGS.max_steps):
-            for i in range(len(train_image)//FLAGS.batch_size):
+        step = 0
+        print(len(train_image))
+        # 無限に訓練を実行していく
+        for step in range(400):
+            for i in range(len(train_image)//batch_size):
                 # batch_size分の画像に対して訓練の実行
-                batch = FLAGS.batch_size*i
+                batch = batch_size*i
                 # feed_dictでplaceholderに入れるデータを指定する
                 sess.run(train_op, feed_dict={
-                    images_placeholder: train_image[batch:batch+FLAGS.batch_size],
-                    labels_placeholder: train_label[batch:batch+FLAGS.batch_size],
+                    images_placeholder: train_image[batch:batch+batch_size],
+                    labels_placeholder: train_label[batch:batch+batch_size],
                     keep_prob: 0.5})
 
             # 1step終わるたびに精度を計算する
@@ -244,7 +237,8 @@ if __name__ == '__main__':
                 images_placeholder: train_image,
                 labels_placeholder: train_label,
                 keep_prob: 1.0})
-            print("step {}, training accuracy {}".format(step, train_accuracy))
+            if step % 1 == 0:
+                print("step {}, training accuracy {}".format(step, train_accuracy))
 
             # 1step終わるたびにTensorBoardに表示する値を追加する
             summary_str = sess.run(summary_op, feed_dict={
@@ -252,13 +246,18 @@ if __name__ == '__main__':
                 labels_placeholder: train_label,
                 keep_prob: 1.0})
             summary_writer.add_summary(summary_str, step)
-
-    # 訓練が終了したらテストデータに対する精度を表示する
-    print("test accuracy {}".format(sess.run(acc, feed_dict={
-        images_placeholder: test_image,
-        labels_placeholder: test_label,
-        keep_prob: 1.0})))
+            
+            # 100stepごとにテストデータで精度チェック
+            if step > 1 and step % 50 == 0:
+                test_accuracy = sess.run(acc, feed_dict={
+                    images_placeholder: test_image,
+                    labels_placeholder: test_label,
+                    keep_prob: 1.0})
+                print("test accuracy {}".format(test_accuracy))
+                if test_accuracy > 0.97:
+                    break
+            step += 1
 
     # データを学習して最終的に出来上がったモデルを保存
     # "model.ckpt"は出力されるファイル名
-    save_path = saver.save(sess, "imas_model.ckpt")
+    save_path = saver.save(sess, "./imas_model.ckpt")

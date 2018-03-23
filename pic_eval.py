@@ -12,15 +12,17 @@ import study
 face_detector = dlib.simple_object_detector("./detector_face.svm")
 
 # 識別ラベルと各ラベル番号に対応する名前
-CHARA_NAMES = json.load(open("./chara.json"))
+CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
 # 顔サイズ
-FACE_SIZE = 32
+FACE_SIZE = 64
+# CNN向けサイズ
+IMAGE_SIZE = 28
 # エリア拡大
 ZOOM = 5
 
 # キャラ判定本体
 def chara_detect(img, ckpt_path):
-    img = cv2.resize(img, (FACE_SIZE, FACE_SIZE))
+    img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
     # データを入れる配列
     image = []
     # 画像情報を一列にした後、0-1のfloat値にする
@@ -31,11 +33,10 @@ def chara_detect(img, ckpt_path):
     logits = study.inference(image, 1.0)
     # We can just use 'c.eval()' without passing 'sess'
     sess = tf.InteractiveSession()
-    # restore(パラメーター読み込み)の準備
-    saver = tf.train.Saver()
     # 変数の初期化
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
     if ckpt_path:
+        saver = tf.train.import_meta_graph(ckpt_path+".meta")
         # 学習後のパラメーターの読み込み
         saver.restore(sess, ckpt_path)
     # sess.run(logits)と同じ
@@ -53,6 +54,7 @@ def chara_detect(img, ckpt_path):
             'name': name,
             'rate': rate
         })
+    sess.close()
     return results
 
 # 指定した画像(img_path)を学習結果(ckpt_path)を用いて判定する
@@ -108,8 +110,8 @@ def evaluation(img_path, ckpt_path):
                 chara["height"] = face_height
                 chara["rank"] = sorted(result, key=lambda x: x['rate'], reverse=True)
                 charas.append(chara)
-                # 顔部分を囲う
-                if chara["rank"][0]["label"] == (len(CHARA_NAMES)-1):
+                # 顔部分を囲う(B,G,R)
+                if chara["rank"][0]["rate"] < 90:
                     cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
                 else:
                     cv2.rectangle(image, (xs, ys), (xe, ye), (255, 0, 0), thickness=2)
@@ -120,7 +122,7 @@ def evaluation(img_path, ckpt_path):
     cv2.imwrite(img_path, image)
 
     # 判定結果を返す
-    return charas
+    return charas if charas != [] else None
 
 # コマンドラインからのテスト用
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 from flask import Flask, render_template, request
 import pic_eval
@@ -9,6 +10,8 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 # 投稿画像の保存先
 UPLOAD_FOLDER = './static/images/upload/'
+# 識別ラベルと各ラベル番号に対応する名前
+CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
 
 # ルーティング。/にアクセス時
 @app.route('/')
@@ -28,7 +31,7 @@ def post():
             f.save(img_path)
             # pic_eval.pyへアップロードされた画像を渡す
             result = pic_eval.evaluation(img_path, './imas_model.ckpt')
-    if result is None:
+    if result == None:
         return render_template('index.html', error=True)
     else:
         isAS = False
@@ -38,7 +41,8 @@ def post():
             rect[1].append(chara['y'])
             rect[2].append(chara['width'])
             rect[3].append(chara['height'])
-            if chara['rank'][0]['label'] != OTHER:
+            #if chara['rank'][0]['label'] != OTHER:
+            if chara['rank'][0]['rate'] >= 90:
                 isAS = True
         return render_template('index.html', img_path=img_path[1:], rect=rect, result=result, isAS=isAS)
 

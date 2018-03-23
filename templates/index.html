@@ -37,7 +37,11 @@
   <div class="col-md-12">
     {% for chara in result %}
     <div class="detail">
-      <p>これは<span class="red">{{chara['rank'][0]['name']}}</span>ですね</p>
+      {% if chara['rank'][0]['rate'] > 90 %}
+      <p>これは<span class="green">{{chara['rank'][0]['name']}}</span>ですね</p>
+      {% else %}
+      <p>これは<span class="green">AS組以外の人</span>ですね</p>
+      {% endif %}
       <p>
         <canvas id="canvas-{{loop.index0}}" class="cut_image"></canvas>
       </p>
@@ -49,6 +53,7 @@
         <br>
       </p>
     </div>
+    {% endfor %}
     <script type="text/javascript">
       var facex = '{{rect[0]}}';
       var facey = '{{rect[1]}}';
@@ -56,8 +61,7 @@
       var faceh = '{{rect[3]}}';
       var image_url = '{{img_path}}';
     </script>
-    <script src="/static/image.js"></script>
-    {% endfor %}
+    <script src="/static/image.js?ver=0.9"></script>
   </div>
   {% endif %}
 </div>
