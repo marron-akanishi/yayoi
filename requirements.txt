@@ -1,0 +1,5 @@
+tensorflow==1.6.0
+opencv-python==3.4.0.12
+numpy==1.14.0
+Flask==0.12.2
+dlib==19.9.0

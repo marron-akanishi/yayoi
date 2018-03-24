@@ -4,7 +4,7 @@
   <!-- 上 -->
   <div class="row">
     <!-- キャラ -->
-    <div class="col-md-8">
+    <div class="col-md-9">
       <img src="/static/images/yayoi_sd.png"/>
       <p class="balloon1-left">
         {% if result %}
@@ -21,8 +21,8 @@
       </p>
     </div>
     <!-- 送信フォーム -->
-    <div class="col-md-4">
-      <p>画像サイズ制限：2000x2000px以下</p>
+    <div class="col-md-3">
+      <p>画像サイズ：2000x2000px以下</p>
       <form action="/detect" method="post" class="form-inline" enctype="multipart/form-data">
         <input type="file" name="file" class=”form-control” required/>
         <button type="submit" class="btn btn-primary" style="margin-top:10px;">画像を渡す</button>
@@ -31,8 +31,8 @@
   </div>
   {% if result %}
   <!-- 下 -->
-  <div>
-    <img src="{{img_path}}" class="detect_img" />
+  <div class="col-md-12">
+    <img src="{{img_path}}" class="detect_img img-responsive" />
   </div>
   <div class="col-md-12">
     {% for chara in result %}
@@ -61,7 +61,7 @@
       var faceh = '{{rect[3]}}';
       var image_url = '{{img_path}}';
     </script>
-    <script src="/static/image.js?ver=0.9"></script>
+    <script src="/static/image.js?ver=1.0"></script>
   </div>
   {% endif %}
 </div>

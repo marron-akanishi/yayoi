@@ -2,6 +2,7 @@
 *.png
 *.db
 files/
+!detect_test.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
