@@ -13,8 +13,12 @@ dlibのビルドにはcmakeとboostが必要となります。
 Windowsの場合は[AFD](https://github.com/marron-akanishi/AFD)の参考URLを見てください。  
 Ubuntuの場合はpipを実行する前に`sudo apt install cmake libboost-python-dev`を実行してください。  
 #### cv2
-たまに足りないライブラリがあるって言われるかも...  
-調査中
+Ubuntuで実行するとcv2をimportした際に以下のエラーが発生する場合があります。  
+```
+ImportError: libSM.so.6: cannot open shared object file: No such file or directory
+ImportError: libXrender.so.1: cannot open shared object file: No such file or directory
+```
+発生した場合は`sudo apt install libsm6 libxrender1`を実行してください。
 
 ## ファイル構成
 static/ -> WebUIを動かすのに必要なファイル群  
