@@ -7,10 +7,18 @@ iM@S chara detect with TensorFlow
 ## 動作環境  
 Python 3.5以降で動くと思います。  
 requirements.txtに沿って必要なライブラリをpipでインストールしてください。  
+### 特定のライブラリが動かない場合
+#### dlib
+dlibのビルドにはcmakeとboostが必要となります。  
+Windowsの場合は[AFD](https://github.com/marron-akanishi/AFD)の参考URLを見てください。  
+Ubuntuの場合はpipを実行する前に`sudo apt install cmake libboost-python-dev`を実行してください。  
+#### cv2
+たまに足りないライブラリがあるって言われるかも...  
+調査中
 
 ## ファイル構成
-static -> WebUIを動かすのに必要なファイル群  
-templates -> レンダリング用HTMLファイル  
+static/ -> WebUIを動かすのに必要なファイル群  
+templates/ -> レンダリング用HTMLファイル  
 chara.json -> タグとキャラ名を関連付けるJSONファイル  
 checkpoint, imas_model.ckpt* -> キャラ判定用モデル  
 detector_face.svm -> 顔判定用特徴量ファイル  
