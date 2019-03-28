@@ -8,15 +8,15 @@
       <img src="/static/images/yayoi_sd.png"/>
       <p class="balloon1-left">
         {% if result %}
-          {% if isAS %}
-          うっうー！この画像にはAS組の仲間が写ってると思います！
+          {% if is765 %}
+          うっうー！この画像には765PROの仲間が写ってると思います！
           {% else %}
-          うう…。この画像にAS組の仲間は写ってないみたいです。
+          うう…。この画像に765PROの仲間は写ってないみたいです。
           {% endif %}
         {% elif error %}
         うーん？エラーが発生したみたいです。
         {% else %}
-        765PRO AS組の13人を見分けられたらいいなーって。
+        765PROのみんなを見分けられたらいいなーって。
         {% endif %}
       </p>
     </div>
@@ -25,6 +25,7 @@
       <p>画像サイズ：2000x2000px以下</p>
       <form action="/detect" method="post" class="form-inline" enctype="multipart/form-data">
         <input type="file" name="file" class=”form-control” required/>
+        <input type="checkbox" name="isTheater" value="yes">52人モード(精度低め)<br>
         <button type="submit" class="btn btn-primary" style="margin-top:10px;">画像を渡す</button>
       </form>
     </div>
@@ -37,10 +38,10 @@
   <div class="col-md-12">
     {% for chara in result %}
     <div class="detail">
-      {% if chara['rank'][0]['rate'] > 90 %}
+      {% if chara['rank'][0]['rate'] > 70 %}
       <p>これは<span class="green">{{chara['rank'][0]['name']}}</span>ですね</p>
       {% else %}
-      <p>これは<span class="green">AS組以外の人</span>ですね</p>
+      <p>これは<span class="green">765PRO以外の人</span>ですね</p>
       {% endif %}
       <p>
         <canvas id="canvas-{{loop.index0}}" class="cut_image"></canvas>

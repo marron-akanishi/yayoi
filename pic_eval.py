@@ -7,22 +7,25 @@ import cv2
 import dlib
 import tensorflow as tf
 import study
+import study_52
 
 # 顔認識特徴量ファイル
 face_detector = dlib.simple_object_detector("./detector_face.svm")
 
-# 識別ラベルと各ラベル番号に対応する名前
-CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
 # 顔サイズ
 FACE_SIZE = 64
 # CNN向けサイズ
 IMAGE_SIZE = 28
+IMAGE_SIZE_52 = 48
 # エリア拡大
 ZOOM = 5
 
 # キャラ判定本体
-def chara_detect(img, ckpt_path):
-    img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
+def chara_detect(img, ckpt_path, names, isTheater):
+    if isTheater:
+        img = cv2.resize(img, (IMAGE_SIZE_52, IMAGE_SIZE_52))
+    else:
+        img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
     # データを入れる配列
     image = []
     # 画像情報を一列にした後、0-1のfloat値にする
@@ -32,7 +35,10 @@ def chara_detect(img, ckpt_path):
     # GraphのReset(らしいが、何をしているのかよくわかっていない…)
     tf.reset_default_graph()
     # 入力画像に対して、各ラベルの確率を出力して返す(study.pyより呼び出し)
-    logits = study.inference(image, 1.0)
+    if isTheater:
+        logits = study_52.inference(image, 1.0)
+    else:    
+        logits = study.inference(image, 1.0)
     # ロード用saver作成
     saver = tf.train.Saver()
     with tf.Session() as sess:
@@ -49,7 +55,7 @@ def chara_detect(img, ckpt_path):
         results = []
         # ラベル番号、名前、パーセンテージの辞書を作成
         for index, rate in enumerate(rates):
-            name = CHARA_NAMES[str(index)]
+            name = names[str(index)]
             results.append({
                 'label': index,
                 'name': name,
@@ -58,7 +64,7 @@ def chara_detect(img, ckpt_path):
     return results
 
 # 指定した画像(img_path)を学習結果(ckpt_path)を用いて判定する
-def evaluation(img_path, ckpt_path):
+def evaluation(img_path, ckpt_path, names, isTheater):
     charas = []
     # ファイルを開く
     image = cv2.imread(img_path)
@@ -99,7 +105,7 @@ def evaluation(img_path, ckpt_path):
                 # 顔だけ切り出し
                 dst = image[ys:ye, xs:xe]
                 # キャラ判定
-                result = chara_detect(dst, ckpt_path)
+                result = chara_detect(dst, ckpt_path, names, isTheater)
                 # エリア情報を含めた辞書を生成
                 chara = {}
                 chara["x"] = xs
@@ -109,7 +115,7 @@ def evaluation(img_path, ckpt_path):
                 chara["rank"] = sorted(result, key=lambda x: x['rate'], reverse=True)
                 charas.append(chara)
                 # 顔部分を囲う(B,G,R)
-                if chara["rank"][0]["rate"] < 90:
+                if chara["rank"][0]["rate"] < 70:
                     cv2.rectangle(image, (xs, ys), (xe, ye), (0, 0, 255), thickness=2)
                 else:
                     cv2.rectangle(image, (xs, ys), (xe, ye), (255, 0, 0), thickness=2)
@@ -124,4 +130,6 @@ def evaluation(img_path, ckpt_path):
 
 # コマンドラインからのテスト用
 if __name__ == '__main__':
-    print(evaluation(sys.argv[1], './imas_model.ckpt'))
+    # 識別ラベルと各ラベル番号に対応する名前
+    CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
+    print(evaluation(sys.argv[1], './imas_model.ckpt', CHARA_NAMES, False))

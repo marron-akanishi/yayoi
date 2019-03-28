@@ -11,8 +11,6 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 # 投稿画像の保存先
 UPLOAD_FOLDER = './static/images/upload/'
-# 識別ラベルと各ラベル番号に対応する名前
-CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
 
 # ルーティング。/にアクセス時
 @app.route('/')
@@ -35,11 +33,19 @@ def post():
             img_path = UPLOAD_FOLDER + filename
             f.save(img_path)
             # pic_eval.pyへアップロードされた画像を渡す
-            result = pic_eval.evaluation(img_path, './imas_model.ckpt')
+            print(request.form.get('isTheater'))
+            if request.form.get('isTheater') != None:
+                # 識別ラベルと各ラベル番号に対応する名前
+                CHARA_NAMES = json.load(open("./chara_52.json", encoding="utf-8"))
+                result = pic_eval.evaluation(img_path, './imas_model_52.ckpt', CHARA_NAMES, True)
+            else:
+                # 識別ラベルと各ラベル番号に対応する名前
+                CHARA_NAMES = json.load(open("./chara.json", encoding="utf-8"))
+                result = pic_eval.evaluation(img_path, './imas_model.ckpt', CHARA_NAMES, False)
     if result == None:
         return index(True)
     else:
-        isAS = False
+        is765 = False
         rect = [[],[],[],[]]
         for chara in result:
             rect[0].append(chara['x'])
@@ -47,11 +53,11 @@ def post():
             rect[2].append(chara['width'])
             rect[3].append(chara['height'])
             #if chara['rank'][0]['label'] != OTHER:
-            if chara['rank'][0]['rate'] >= 90:
-                isAS = True
+            if chara['rank'][0]['rate'] >= 70:
+                is765 = True
         timestamp = int(datetime.now().timestamp())
         img_path += "?time={}".format(timestamp)
-        return render_template('index.html', img_path=img_path[1:], rect=rect, result=result, isAS=isAS)
+        return render_template('index.html', img_path=img_path[1:], rect=rect, result=result, is765=is765)
 
 if __name__ == '__main__':
     app.debug = False
